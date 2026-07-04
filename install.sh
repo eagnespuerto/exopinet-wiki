@@ -28,7 +28,16 @@ apt-get install -y --no-install-recommends \
     python3-pil.imagetk
 
 echo "==> Copying files to ${INSTALL_DIR}"
+# Wipe any prior install so stale files (removed modules, old assets, etc.)
+# don't shadow the fresh checkout. The user's data cache at
+# ~/.local/share/exopinet-wiki/ lives outside this directory and is preserved.
 mkdir -p "${INSTALL_DIR}"
+rm -rf \
+    "${INSTALL_DIR}/exopinet_wiki" \
+    "${INSTALL_DIR}/assets" \
+    "${INSTALL_DIR}/${APP_NAME}" \
+    "${INSTALL_DIR}/README.md" \
+    "${INSTALL_DIR}/LICENSE"
 cp -r \
     "${SRC_DIR}/exopinet_wiki" \
     "${SRC_DIR}/assets" \
@@ -37,6 +46,8 @@ cp -r \
     "${SRC_DIR}/LICENSE" \
     "${INSTALL_DIR}/"
 chmod +x "${INSTALL_DIR}/${APP_NAME}"
+# Drop any stale bytecode from a previous install.
+find "${INSTALL_DIR}" -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
 
 echo "==> Linking launcher to ${BIN_LINK}"
 ln -sf "${INSTALL_DIR}/${APP_NAME}" "${BIN_LINK}"
@@ -52,12 +63,23 @@ if [[ ! -f "${INSTALL_DIR}/assets/icon.png" ]]; then
     cp "${INSTALL_DIR}/assets/bmp/terrestrial.bmp" "${INSTALL_DIR}/assets/icon.png" 2>/dev/null || true
 fi
 
+INSTALLED_VERSION="$(
+    python3 -c "import sys; sys.path.insert(0, '${INSTALL_DIR}'); \
+                from exopinet_wiki import __version__; print(__version__)" \
+        2>/dev/null || echo unknown
+)"
+
 cat <<MSG
 
-ExoPiNet Wiki installed.
+ExoPiNet Wiki ${INSTALLED_VERSION} installed under ${INSTALL_DIR}.
 
   Launch from the menu (Science or Education), or run:
       exopinet-wiki
 
   On first run, choose "File -> Update Data" to download the catalogues.
+
+  To update later:
+      cd <this-checkout>
+      git pull
+      sudo ./install.sh
 MSG

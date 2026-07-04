@@ -45,6 +45,21 @@ exopinet-wiki
 On first run, choose **File → Update Data** to fetch the catalogues (~a few
 MB). All subsequent launches work offline.
 
+## Update
+
+`git pull` alone only updates your checkout. To refresh the copy that
+`exopinet-wiki` actually runs (under `/opt/exopinet-wiki`) you must re-run
+the installer:
+
+```bash
+cd exopinet-wiki
+git pull
+sudo ./install.sh
+```
+
+The installer prints the installed version at the end so you can confirm the
+new build is live.
+
 ## Uninstall
 
 ```bash
