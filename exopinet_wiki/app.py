@@ -1,5 +1,6 @@
 """Tkinter UI for browsing the local exoplanet cache."""
 
+import sys
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -7,6 +8,17 @@ from typing import Optional
 
 from . import __version__, classify, db, sync
 from .paths import bmp_dir
+
+
+PLACEHOLDER_COLORS = {
+    "terrestrial": "#2d6aa7",
+    "super-earth": "#8a4a25",
+    "mini-neptune": "#3a8f8a",
+    "neptune-like": "#1e4fa0",
+    "gas-giant": "#b07540",
+    "unknown": "#54545c",
+}
+PLACEHOLDER_BG = "#000814"
 
 
 SORT_OPTIONS = (
@@ -111,15 +123,35 @@ class App(tk.Tk):
         )
         self.detail_title.pack(anchor=tk.W)
 
-        self.image_holder = ttk.Frame(right, height=140)
-        self.image_holder.pack(anchor=tk.W, pady=(6, 12))
-        self.image_holder.pack_propagate(False)
+        self.image_holder = ttk.Frame(right)
+        self.image_holder.pack(anchor=tk.W, fill=tk.X, pady=(6, 12))
 
+        detail_frame = ttk.Frame(right)
+        detail_frame.pack(fill=tk.BOTH, expand=True)
+        detail_vsb = ttk.Scrollbar(detail_frame, orient=tk.VERTICAL)
+        detail_vsb.pack(side=tk.RIGHT, fill=tk.Y)
         self.detail_text = tk.Text(
-            right, height=20, wrap=tk.WORD, borderwidth=0, background=self.cget("background")
+            detail_frame,
+            wrap=tk.WORD,
+            borderwidth=0,
+            background=self.cget("background"),
+            yscrollcommand=detail_vsb.set,
         )
-        self.detail_text.pack(fill=tk.BOTH, expand=True)
+        self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        detail_vsb.config(command=self.detail_text.yview)
         self.detail_text.configure(state=tk.DISABLED)
+        # Explicit mouse-wheel bindings — Tk on X11 (Raspberry Pi OS) doesn't
+        # auto-forward wheel events to Text widgets.
+        self.detail_text.bind(
+            "<MouseWheel>",
+            lambda e: self.detail_text.yview_scroll(int(-e.delta / 60), "units"),
+        )
+        self.detail_text.bind(
+            "<Button-4>", lambda _e: self.detail_text.yview_scroll(-3, "units")
+        )
+        self.detail_text.bind(
+            "<Button-5>", lambda _e: self.detail_text.yview_scroll(3, "units")
+        )
 
     # Data -----------------------------------------------------------
 
@@ -219,11 +251,12 @@ class App(tk.Tk):
         for child in self.image_holder.winfo_children():
             child.destroy()
         img = self._load_image(planet_type)
-        if img is None:
-            return
-        label = ttk.Label(self.image_holder, image=img)
-        label.image = img  # keep a reference
-        label.pack(side=tk.LEFT)
+        if img is not None:
+            label = ttk.Label(self.image_holder, image=img)
+            label.image = img  # keep a reference
+            label.pack(side=tk.LEFT)
+        else:
+            self._draw_placeholder(planet_type)
         caption = ttk.Label(
             self.image_holder,
             text=f"{classify.DISPLAY.get(planet_type, 'Unknown')} template",
@@ -231,21 +264,50 @@ class App(tk.Tk):
         )
         caption.pack(side=tk.LEFT, anchor=tk.S)
 
+    def _draw_placeholder(self, planet_type: str) -> None:
+        """Canvas fallback drawn when the BMP can't be loaded.
+
+        Keeps the layout consistent (no mystery blank space) even if Pillow's
+        ImageTk isn't installed or the asset is missing.
+        """
+        canvas = tk.Canvas(
+            self.image_holder,
+            width=128,
+            height=128,
+            highlightthickness=0,
+            background=PLACEHOLDER_BG,
+        )
+        canvas.pack(side=tk.LEFT)
+        color = PLACEHOLDER_COLORS.get(planet_type, "#666")
+        canvas.create_oval(12, 12, 116, 116, fill=color, outline="")
+
     def _load_image(self, planet_type: str):
         if planet_type in self._images:
             return self._images[planet_type]
         path = bmp_dir() / f"{planet_type}.bmp"
         if not path.exists():
+            print(
+                f"exopinet-wiki: image not found: {path}", file=sys.stderr
+            )
+            return None
+        # Tk's PhotoImage on Pi OS can't decode BMP, so go straight to Pillow.
+        try:
+            from PIL import Image, ImageTk
+        except ImportError as exc:
+            print(
+                f"exopinet-wiki: Pillow not available ({exc}); install "
+                "python3-pil.imagetk to see the planet artwork.",
+                file=sys.stderr,
+            )
             return None
         try:
-            img = tk.PhotoImage(file=str(path))
-        except tk.TclError:
-            # Tk's PhotoImage can't always read BMP. Fall back to Pillow.
-            try:
-                from PIL import Image, ImageTk
-            except ImportError:
-                return None
-            img = ImageTk.PhotoImage(Image.open(path))
+            with Image.open(path) as pil_img:
+                img = ImageTk.PhotoImage(pil_img.copy())
+        except Exception as exc:  # noqa: BLE001 - reported to stderr
+            print(
+                f"exopinet-wiki: failed to load {path}: {exc}", file=sys.stderr
+            )
+            return None
         self._images[planet_type] = img
         return img
 
