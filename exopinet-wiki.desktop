@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=ExoPiNet Wiki
+GenericName=Exoplanet Reference
+Comment=Offline browser for Open Exoplanet Catalogue and NASA Exoplanet Archive
+Exec=exopinet-wiki
+Icon=/opt/exopinet-wiki/assets/icon.png
+Terminal=false
+Categories=Science;Education;Astronomy;
+Keywords=exoplanet;astronomy;science;NASA;catalogue;
+StartupNotify=true

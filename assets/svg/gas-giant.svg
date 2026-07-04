@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <radialGradient id="body" cx="42%" cy="38%" r="72%">
+      <stop offset="0%" stop-color="#f0d4a3"/>
+      <stop offset="55%" stop-color="#b07540"/>
+      <stop offset="100%" stop-color="#3a1c07"/>
+    </radialGradient>
+  </defs>
+  <rect width="128" height="128" fill="#000814"/>
+  <circle cx="64" cy="64" r="58" fill="url(#body)"/>
+  <!-- banded atmosphere -->
+  <ellipse cx="64" cy="42" rx="56" ry="4" fill="#5a2f10" opacity="0.35"/>
+  <ellipse cx="64" cy="54" rx="58" ry="4" fill="#f7e0ac" opacity="0.30"/>
+  <ellipse cx="64" cy="66" rx="58" ry="5" fill="#5a2f10" opacity="0.30"/>
+  <ellipse cx="64" cy="80" rx="56" ry="4" fill="#f7e0ac" opacity="0.28"/>
+  <ellipse cx="64" cy="92" rx="52" ry="4" fill="#5a2f10" opacity="0.28"/>
+  <!-- great red spot -->
+  <ellipse cx="82" cy="72" rx="10" ry="5" fill="#a63510" opacity="0.85"/>
+  <!-- highlight -->
+  <ellipse cx="48" cy="42" rx="18" ry="7" fill="#ffffff" opacity="0.20"/>
+</svg>
