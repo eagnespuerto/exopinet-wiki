@@ -7,7 +7,7 @@ from tkinter import messagebox, ttk
 from typing import Optional
 
 from . import __version__, classify, db, sync
-from .paths import bmp_dir
+from .paths import bmp_dir, png_dir
 
 
 PLACEHOLDER_COLORS = {
@@ -252,8 +252,10 @@ class App(tk.Tk):
             child.destroy()
         img = self._load_image(planet_type)
         if img is not None:
-            label = ttk.Label(self.image_holder, image=img)
-            label.image = img  # keep a reference
+            # Plain tk.Label — ttk.Label ignores keep-alive image refs on some
+            # older Tk versions, which was making the picture silently vanish.
+            label = tk.Label(self.image_holder, image=img, borderwidth=0)
+            label.image = img
             label.pack(side=tk.LEFT)
         else:
             self._draw_placeholder(planet_type)
@@ -282,34 +284,59 @@ class App(tk.Tk):
         canvas.create_oval(12, 12, 116, 116, fill=color, outline="")
 
     def _load_image(self, planet_type: str):
+        """Load the planet artwork.
+
+        Preference order:
+          1. PNG via native Tk 8.6 PhotoImage (Pi OS ships Tk 8.6, no
+             Pillow-ImageTk dependency needed for display).
+          2. BMP via Pillow's ImageTk if Pillow is available.
+
+        Returns None if everything failed; the caller then draws a Canvas
+        placeholder so nothing appears blank.
+        """
         if planet_type in self._images:
             return self._images[planet_type]
-        path = bmp_dir() / f"{planet_type}.bmp"
-        if not path.exists():
+
+        png_path = png_dir() / f"{planet_type}.png"
+        if png_path.exists():
+            try:
+                img = tk.PhotoImage(file=str(png_path))
+                self._images[planet_type] = img
+                return img
+            except tk.TclError as exc:
+                print(
+                    f"exopinet-wiki: Tk could not decode {png_path}: {exc}",
+                    file=sys.stderr,
+                )
+
+        bmp_path = bmp_dir() / f"{planet_type}.bmp"
+        if bmp_path.exists():
+            try:
+                from PIL import Image, ImageTk
+            except ImportError as exc:
+                print(
+                    f"exopinet-wiki: Pillow not available ({exc}); install "
+                    "python3-pil.imagetk to fall back to BMP artwork.",
+                    file=sys.stderr,
+                )
+            else:
+                try:
+                    with Image.open(bmp_path) as pil_img:
+                        img = ImageTk.PhotoImage(pil_img.copy())
+                    self._images[planet_type] = img
+                    return img
+                except Exception as exc:  # noqa: BLE001 - reported to stderr
+                    print(
+                        f"exopinet-wiki: failed to load {bmp_path}: {exc}",
+                        file=sys.stderr,
+                    )
+
+        if not png_path.exists() and not bmp_path.exists():
             print(
-                f"exopinet-wiki: image not found: {path}", file=sys.stderr
-            )
-            return None
-        # Tk's PhotoImage on Pi OS can't decode BMP, so go straight to Pillow.
-        try:
-            from PIL import Image, ImageTk
-        except ImportError as exc:
-            print(
-                f"exopinet-wiki: Pillow not available ({exc}); install "
-                "python3-pil.imagetk to see the planet artwork.",
+                f"exopinet-wiki: no artwork found at {png_path} or {bmp_path}",
                 file=sys.stderr,
             )
-            return None
-        try:
-            with Image.open(path) as pil_img:
-                img = ImageTk.PhotoImage(pil_img.copy())
-        except Exception as exc:  # noqa: BLE001 - reported to stderr
-            print(
-                f"exopinet-wiki: failed to load {path}: {exc}", file=sys.stderr
-            )
-            return None
-        self._images[planet_type] = img
-        return img
+        return None
 
     # Actions --------------------------------------------------------
 

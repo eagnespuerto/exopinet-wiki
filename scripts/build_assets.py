@@ -16,8 +16,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "assets" / "bmp"
-OUT.mkdir(parents=True, exist_ok=True)
+OUT_BMP = ROOT / "assets" / "bmp"
+OUT_PNG = ROOT / "assets" / "png"
+OUT_BMP.mkdir(parents=True, exist_ok=True)
+OUT_PNG.mkdir(parents=True, exist_ok=True)
 
 SIZE = 128
 BG = (0, 8, 20)
@@ -178,9 +180,10 @@ BUILDERS = {
 def main() -> None:
     for name, builder in BUILDERS.items():
         img = builder()
-        out = OUT / f"{name}.bmp"
-        img.save(out, format="BMP")
-        print(f"wrote {out.relative_to(ROOT)}")
+        for ext, fmt, out_dir in (("bmp", "BMP", OUT_BMP), ("png", "PNG", OUT_PNG)):
+            out = out_dir / f"{name}.{ext}"
+            img.save(out, format=fmt)
+            print(f"wrote {out.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

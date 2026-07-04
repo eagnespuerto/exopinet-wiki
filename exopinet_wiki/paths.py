@@ -19,3 +19,7 @@ def asset_dir() -> Path:
 
 def bmp_dir() -> Path:
     return asset_dir() / "bmp"
+
+
+def png_dir() -> Path:
+    return asset_dir() / "png"
