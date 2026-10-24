@@ -1,5 +1,12 @@
 # ExoPiNet Wiki
 
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![release](https://img.shields.io/github/v/release/eagnespuerto/exopinet-wiki?include_prereleases&sort=semver)](https://github.com/eagnespuerto/exopinet-wiki/releases/latest)
+[![made with](https://img.shields.io/badge/made%20with-Python-3776AB?logo=python&logoColor=white)](https://github.com/eagnespuerto/exopinet-wiki)
+[![platform](https://img.shields.io/badge/platform-Raspberry%20Pi-A22846?logo=raspberrypi&logoColor=white)](https://github.com/eagnespuerto/exopinet-wiki#readme)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support%20me-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/eagnespuerto)
+[![Linktree](https://img.shields.io/badge/Linktree-soitsagnes-43E55E?logo=linktree&logoColor=white)](https://linktr.ee/soitsagnes)
+
 An offline exoplanet reference for Raspberry Pi OS. Downloads and caches data
 from the [Open Exoplanet Catalogue](https://github.com/OpenExoplanetCatalogue/open_exoplanet_catalogue)
 and the [NASA Exoplanet Archive](https://exoplanetarchive.ipac.caltech.edu/),
